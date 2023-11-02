@@ -1,9 +1,13 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 public class Main {
     public static int cycles = 0;
+    public static int arrivalTime = 0;
+    public static int heapSize = 0;
 
     public static void main(String[] args) {
         try {
@@ -12,40 +16,45 @@ public class Main {
 
             String line;
             Process[] processes = new Process[100];
-            int heapSize = 0;
             int processId = 0;
 
             while ((line = reader.readLine()) != null) {
                 processId++;
                 String[] numbers = line.split(" ");
-                int arrivalTime = Integer.parseInt(numbers[0]);
+                arrivalTime = Integer.parseInt(numbers[0]);
                 int runningTime = Integer.parseInt(numbers[1]);
                 int priority = Integer.parseInt(numbers[2]);
 
-                Process process = new Process(processId, priority, runningTime, arrivalTime);
+                Process process = new Process(processId, priority, runningTime);
+                CompletableFuture<Void> processFuture = CompletableFuture.runAsync(() -> process.run());
+                line = reader.readLine();
+                if (line != null) {
+                    arrivalTime = Integer.parseInt(line.split(" ")[0]);
+                }
 
                 processes[heapSize] = process;
                 heapSize++;
-                if(cycles == 0){
-                heapifyUp(processes, heapSize - 1);}
-                else{
-                    while(cycles>=arrivalTime){
+                if (cycles == 0) {
+                    heapifyUp(processes, heapSize - 1);
+                } else {
                     Process minProcess = extractMin(processes, heapSize);
-                    minProcess.run();}
+                    CompletableFuture<Void> minProcessFuture = CompletableFuture.runAsync(() -> minProcess.run());
+                    minProcessFuture.get();
                 }
+
+                processFuture.get();
             }
 
             reader.close();
 
-
-
-            // while (heapSize > 0) {
-            //     Process minProcess = extractMin(processes, heapSize);
-            //     heapSize--;
-            //     minProcess.run();
-            // }
-        } catch (IOException e) {
-            System.err.println("An error occurred while reading the file: " + e.getMessage());
+            while (heapSize > 0) {
+                Process minProcess = extractMin(processes, heapSize);
+                heapSize--;
+                CompletableFuture<Void> processFuture = CompletableFuture.runAsync(() -> minProcess.run());
+                processFuture.get();
+            }
+        } catch (IOException | InterruptedException | ExecutionException e) {
+            System.err.println("An error occurred: " + e.getMessage());
         }
     }
 
@@ -103,27 +112,31 @@ class Process implements Comparable<Process> {
     private int priority;
     private int runningTime;
     private int cyclesRun;
-    private int arrivalTime;
 
-    public Process(int processId, int priority, int runningTime, int arrivalTime) {
+    public Process(int processId, int priority, int runningTime) {
         this.processId = processId;
         this.priority = priority;
         this.runningTime = runningTime;
-        this.arrivalTime = arrivalTime;
         this.cyclesRun = 0;
     }
 
     public void run() {
         Main.cycles++;
-        if (cyclesRun < runningTime) {
+        while (cyclesRun < runningTime) {
             cyclesRun++;
+            Main.cycles++;
             System.out.println("On cycle: " + Main.cycles + " the process " + processId + " ran for " + cyclesRun + " time(s)" + " priority " + priority);
+            //System.out.println("main.arrival " + Main.arrivalTime+ "   main.cycles "+Main.cycles);
+            if (Main.arrivalTime == Main.cycles) {
+                break;
+            }
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-        } else {
+        }
+        if (runningTime == cyclesRun) {
             System.out.println("Process ID: " + processId + " has completed.");
         }
     }
