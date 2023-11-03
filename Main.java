@@ -8,14 +8,17 @@ public class Main {
     public static Process[] processHeap; // Custom heap structure
 
     public static void main(String[] args) {
-        processHeap = new Process[100]; // Assuming a maximum of 100 processes
-        
+        // ...
+
         try {
             String filePath = "input.txt";
             BufferedReader reader = new BufferedReader(new FileReader(filePath));
 
             String line;
             int processId = 0;
+
+            // Initialize the heap array
+            processHeap = new Process[100]; // Assuming a maximum of 100 processes
 
             while ((line = reader.readLine()) != null) {
                 processId++;
@@ -25,7 +28,10 @@ public class Main {
                 int priority = Integer.parseInt(numbers[2]);
 
                 Process process = new Process(processId, priority, runningTime, arrivalTime);
-                addToHeap(process);
+                processHeap[heapSize] = process;
+
+                // Increase the heap size
+                heapSize++;
             }
 
             reader.close();
@@ -33,72 +39,71 @@ public class Main {
             System.err.println("An error occurred while reading the file: " + e.getMessage());
         }
 
+        // Iterate through the heap and add processes with arrival time zero to the heap
+
+        // Extract processes from the heap to get them sorted by priority
         while (heapSize > 0) {
-            Process currentProcess = processHeap[0]; // Get the top process without removing it
-            boolean isCompleted = currentProcess.run();
-            if (isCompleted) {
-                removeTopProcess();
+            for (int i = 0; i < heapSize; i++) {
+            if (processHeap[i].getArrivalTime() == 0) {
+                addToHeap(processHeap[i]);
             }
+        }
+            Process minPriorityProcess = findMinPriorityProcess();
+            boolean processComplete = minPriorityProcess.run();
+            if (processComplete){
+                extractMinPriorityProcess();
+            }
+            System.out.println("Process ID: " + minPriorityProcess.getProcessId() + " Priority: " + minPriorityProcess.getPriority());
         }
     }
 
     public static void addToHeap(Process process) {
-        // Add the process to the heap based on your criteria (priority and arrival time)
-        processHeap[heapSize] = process;
         int current = heapSize;
-        while (current > 0) {
-            int parent = (current - 1) / 2;
-            if (compareProcesses(process, processHeap[parent])) {
-                break;
-            }
-            swap(current, parent);
-            current = parent;
+        processHeap[current] = process;
+        while (current > 0 && processHeap[current].getPriority() < processHeap[(current - 1) / 2].getPriority()) {
+            swap(current, (current - 1) / 2);
+            current = (current - 1) / 2;
         }
-        heapSize++;
     }
 
-    public static void removeTopProcess() {
-        // Remove the top process from the heap and resort
-        if (heapSize == 0) {
-            return; // Heap is empty
-        }
+    public static Process extractMinPriorityProcess() {
+        Process minProcess = processHeap[0];
+        processHeap[0] = processHeap[heapSize - 1];
         heapSize--;
-        processHeap[0] = processHeap[heapSize];
-        int current = 0;
-        while (true) {
-            int leftChild = 2 * current + 1;
-            int rightChild = 2 * current + 2;
-            int smallest = current;
-            if (leftChild < heapSize && compareProcesses(processHeap[leftChild], processHeap[smallest])) {
-                smallest = leftChild;
-            }
-            if (rightChild < heapSize && compareProcesses(processHeap[rightChild], processHeap[smallest])) {
-                smallest = rightChild;
-            }
-            if (smallest == current) {
-                break;
-            }
-            swap(current, smallest);
-            current = smallest;
-        }
+        heapify(0);
+        return minProcess;
     }
-
-    public static void swap(int index1, int index2) {
-        Process temp = processHeap[index1];
-        processHeap[index1] = processHeap[index2];
-        processHeap[index2] = temp;
+    public static Process findMinPriorityProcess() {
+    if (heapSize == 0) {
+        return null; // Heap is empty
     }
-
-     public static boolean compareProcesses(Process p1, Process p2) {
-    if (p1.getPriority() < p2.getPriority() && p1.getArrivalTime() > p2.getArrivalTime()) {
-        return false;
-    } else if (p1.getPriority() == p2.getPriority() && p1.getArrivalTime() > p2.getArrivalTime()) {
-        return false;
-    }
-    return true;
+    return processHeap[0];
 }
 
-    
+    public static void heapify(int index) {
+        int left = 2 * index + 1;
+        int right = 2 * index + 2;
+        int smallest = index;
+
+        if (left < heapSize && processHeap[left].getPriority() < processHeap[smallest].getPriority()) {
+            smallest = left;
+        }
+
+        if (right < heapSize && processHeap[right].getPriority() < processHeap[smallest].getPriority()) {
+            smallest = right;
+        }
+
+        if (smallest != index) {
+            swap(index, smallest);
+            heapify(smallest);
+        }
+    }
+
+    public static void swap(int i, int j) {
+        Process temp = processHeap[i];
+        processHeap[i] = processHeap[j];
+        processHeap[j] = temp;
+    }
 }
 
 class Process {
@@ -122,6 +127,10 @@ class Process {
 
     public int getArrivalTime() {
         return arrivalTime;
+    }
+
+    public int getProcessId() {
+        return processId;
     }
 
     public boolean run() {
