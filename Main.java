@@ -5,15 +5,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Main {
+    //defining global vars
     public static int cycles = 0;
     public static List<Process> processHeap = new ArrayList<>();
-    public static List<Process> pendingProcesses = new ArrayList<>(); // Processes with non-zero arrival times
+    public static List<Process> pendingProcesses = new ArrayList<>();
 
     public static void main(String[] args) {
         try {
             String filePath = "input.txt";
             BufferedReader reader = new BufferedReader(new FileReader(filePath));
-
             String line;
             int processId = 0;
 
@@ -27,10 +27,10 @@ public class Main {
                 Process process = new Process(processId, priority, runningTime, arrivalTime);
 
                 if (arrivalTime == 0) {
-                    // Process with arrival time zero is added directly to the heap
+                    // adding first arrived directly into heap
                     addToHeap(process);
                 } else {
-                    // Processes with non-zero arrival times are stored in a separate list
+                    // adding all others to pendingProcess heap
                     pendingProcesses.add(process);
                 }
             }
@@ -39,7 +39,7 @@ public class Main {
 
             // Main loop to simulate processes
             while (!processHeap.isEmpty() || !pendingProcesses.isEmpty()) {
-                // Check if there are pending processes with arrival time zero
+                // Adding pending processes that are ready to our heap
                 for (Process pendingProcess : new ArrayList<>(pendingProcesses)) {
                     if (pendingProcess.getArrivalTime() == 0) {
                         addToHeap(pendingProcess);
@@ -47,42 +47,43 @@ public class Main {
                     }
                 }
 
-                // Decrement arrival times for pending processes
+                // Decrement arrival times of all pending processes so that we can add them to the que when we are ready
                 for (Process pendingProcess : new ArrayList<>(pendingProcesses)) {
                     pendingProcess.decrementArrivalTime();
                 }
 
-                // Extract and process the top priority process
+                
                 if (!processHeap.isEmpty()) {
+                    //min process always sits at 0 index
                     Process minPriorityProcess = processHeap.get(0);
+                    //run min process
                     boolean processComplete = minPriorityProcess.run();
+
+                    //if it is done remove it from the heap
                     if (processComplete) {
                         extractMinPriorityProcess();
                     }
-                    System.out.println("Process ID: " + minPriorityProcess.getProcessId() + " Priority: " + minPriorityProcess.getPriority());
-                }
-
-                // Decrement arrival times for processes in the heap
-                for (Process heapProcess : new ArrayList<>(processHeap)) {
-                    heapProcess.decrementArrivalTime();
                 }
             }
         } catch (IOException e) {
-            System.err.println("An error occurred while reading the file: " + e.getMessage());
+            System.err.println("err" + e.getMessage());
         }
     }
 
+    //adding processes to heap and sorting 
     public static void addToHeap(Process process) {
         processHeap.add(process);
         heapify();
     }
 
+    //pulling min value and removing it from the heap then resorting
     public static Process extractMinPriorityProcess() {
         Process minProcess = processHeap.remove(0);
         heapify();
         return minProcess;
     }
 
+    //sorting
     public static void heapify() {
         int size = processHeap.size();
         for (int i = size / 2 - 1; i >= 0; i--) {
@@ -90,6 +91,7 @@ public class Main {
         }
     }
 
+    //sorting heap
     public static void heapifyDown(int index, int size) {
         int left = 2 * index + 1;
         int right = 2 * index + 2;
@@ -115,7 +117,6 @@ public class Main {
         processHeap.set(j, temp);
     }
 
-    // Rest of your code remains the same.
 
     public static class Process {
         private int processId;
@@ -140,15 +141,12 @@ public class Main {
             return arrivalTime;
         }
 
-        public int getProcessId() {
-            return processId;
-        }
-
         public void decrementArrivalTime() {
             arrivalTime--;
         }
 
         public boolean run() {
+            //incriment global
             cycles++;
             cyclesRun++;
             System.out.println("On cycle: " + cycles + " the process " + processId + " ran for " + cyclesRun + " time(s)" + " priority " + priority);
