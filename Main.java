@@ -2,13 +2,11 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 
 public class Main {
-    //defining global vars
     public static int cycles = 0;
-    public static List<Process> processHeap = new ArrayList<>();
-    public static List<Process> pendingProcesses = new ArrayList<>();
+    public static ArrayList<Process> processHeap = new ArrayList<>();
+    public static ArrayList<Process> pendingProcesses = new ArrayList<>();
 
     public static void main(String[] args) {
         try {
@@ -27,19 +25,15 @@ public class Main {
                 Process process = new Process(processId, priority, runningTime, arrivalTime);
 
                 if (arrivalTime == 0) {
-                    // adding first arrived directly into heap
                     addToHeap(process);
                 } else {
-                    // adding all others to pendingProcess heap
                     pendingProcesses.add(process);
                 }
             }
 
             reader.close();
 
-            // Main loop to simulate processes
             while (!processHeap.isEmpty() || !pendingProcesses.isEmpty()) {
-                // Adding pending processes that are ready to our heap
                 for (Process pendingProcess : new ArrayList<>(pendingProcesses)) {
                     if (pendingProcess.getArrivalTime() == 0) {
                         addToHeap(pendingProcess);
@@ -47,43 +41,35 @@ public class Main {
                     }
                 }
 
-                // Decrement arrival times of all pending processes so that we can add them to the que when we are ready
                 for (Process pendingProcess : new ArrayList<>(pendingProcesses)) {
                     pendingProcess.decrementArrivalTime();
                 }
 
-                
                 if (!processHeap.isEmpty()) {
-                    //min process always sits at 0 index
                     Process minPriorityProcess = processHeap.get(0);
-                    //run min process
                     boolean processComplete = minPriorityProcess.run();
 
-                    //if it is done remove it from the heap
                     if (processComplete) {
                         extractMinPriorityProcess();
                     }
                 }
             }
         } catch (IOException e) {
-            System.err.println("err" + e.getMessage());
+            System.err.println("Error: " + e.getMessage());
         }
     }
 
-    //adding processes to heap and sorting 
     public static void addToHeap(Process process) {
         processHeap.add(process);
         heapify();
     }
 
-    //pulling min value and removing it from the heap then resorting
     public static Process extractMinPriorityProcess() {
         Process minProcess = processHeap.remove(0);
         heapify();
         return minProcess;
     }
 
-    //sorting
     public static void heapify() {
         int size = processHeap.size();
         for (int i = size / 2 - 1; i >= 0; i--) {
@@ -91,7 +77,6 @@ public class Main {
         }
     }
 
-    //sorting heap
     public static void heapifyDown(int index, int size) {
         int left = 2 * index + 1;
         int right = 2 * index + 2;
@@ -116,7 +101,6 @@ public class Main {
         processHeap.set(i, processHeap.get(j));
         processHeap.set(j, temp);
     }
-
 
     public static class Process {
         private int processId;
@@ -146,7 +130,6 @@ public class Main {
         }
 
         public boolean run() {
-            //incriment global
             cycles++;
             cyclesRun++;
             System.out.println("On cycle: " + cycles + " the process " + processId + " ran for " + cyclesRun + " time(s)" + " priority " + priority);
