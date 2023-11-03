@@ -10,17 +10,17 @@ public class Main {
 
     public static void main(String[] args) {
         try {
-            String filePath = "input.txt";
-            BufferedReader reader = new BufferedReader(new FileReader(filePath));
+            String file = "input.txt";
+            BufferedReader reader = new BufferedReader(new FileReader(file));
             String line;
             int processId = 0;
 
             while ((line = reader.readLine()) != null) {
                 processId++;
-                String[] numbers = line.split(" ");
-                int arrivalTime = Integer.parseInt(numbers[0]);
-                int runningTime = Integer.parseInt(numbers[1]);
-                int priority = Integer.parseInt(numbers[2]);
+                String[] data = line.split(" ");
+                int arrivalTime = Integer.parseInt(data[0]);
+                int runningTime = Integer.parseInt(data[1]);
+                int priority = Integer.parseInt(data[2]);
 
                 Process process = new Process(processId, priority, runningTime, arrivalTime);
 
